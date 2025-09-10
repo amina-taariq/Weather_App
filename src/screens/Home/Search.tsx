@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,13 +9,66 @@ import {
 import { MagnifyingGlassIcon } from 'react-native-heroicons/outline';
 import { MapPinIcon } from 'react-native-heroicons/solid';
 import { Colors } from '../../constant/Colors';
+import { debounce } from 'lodash';
+import { fetchLocation, fetchWeatherForecast } from '../../../Api/weather';
 
-const Search: React.FC = () => {
+interface SearchProps {
+  onWeatherUpdate: (weather: any) => void;
+}
+
+const Search: React.FC<SearchProps> = ({ onWeatherUpdate }) => {
   const [showSearch, toggleSearch] = useState(false);
-  const [location, setLocation] = useState([1, 2, 3]);
-  const handleLocation = (loc: number) => {
+  const [location, setLocation] = useState([]);
+  
+   useEffect(() => {
+     fetchMyWeatherData();
+   }, []);
+
+   const fetchMyWeatherData = async () => {
+     fetchWeatherForecast({
+       cityName: 'Islambad',
+       days: '7',
+     }).then(data => {
+       onWeatherUpdate(data);
+     });
+   };
+
+
+
+  const handleLocation = loc => {
     console.log('location:', loc);
+    setLocation([]);
+    toggleSearch(false); 
+    fetchWeatherForecast({
+      cityName: loc.name,
+      days: '7',
+    })
+      .then(data => {
+        // Pass weather data to parent component
+        onWeatherUpdate(data);
+      })
+      .catch(error => {
+        console.error('Weather fetch error:', error);
+      });
   };
+
+  const handleSearch = (value: any) => {
+    if (value.length > 2) {
+      fetchLocation({ cityName: value })
+        .then(data => {
+          setLocation(data);
+        })
+        .catch(error => {
+          console.error('Location fetch error:', error);
+        });
+    } else {
+      setLocation([]);
+    }
+  };
+
+
+  const handleTextDebounce = useCallback(debounce(handleSearch, 1200), []);
+
   return (
     <View style={styles.container}>
       <View
@@ -31,6 +84,7 @@ const Search: React.FC = () => {
         <View style={{ flex: 1 }}>
           {showSearch ? (
             <TextInput
+              onChangeText={handleTextDebounce}
               placeholder="Search city"
               placeholderTextColor="#ddd"
               style={styles.searchInput}
@@ -60,7 +114,7 @@ const Search: React.FC = () => {
                 <View style={styles.location}>
                   <MapPinIcon size={20} color="gray" />
                   <Text style={styles.locationText}>
-                    London , United Kindom
+                    {loc?.name}, {loc?.country}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -74,8 +128,9 @@ const Search: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    width: '93%',
-    marginBottom:60
+    width: '100%',
+    marginBottom: 30,
+    paddingHorizontal: 10,
   },
   searchContainer: {
     height: 55,
@@ -102,18 +157,23 @@ const styles = StyleSheet.create({
   searchInput: {
     width: '80%',
     fontSize: 16,
+    color: 'white',
   },
   locationContainer: {
+    zIndex: 999,
+    position: 'absolute',
+    width: '100%',
+    marginHorizontal: 10,
+    top: 65,
     borderRadius: 24,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   locationBox: {
     paddingVertical: 10,
   },
-
   locationBoxBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: ' #cbd5e0',
+    borderBottomColor: '#cbd5e0',
   },
   locationText: {
     fontSize: 16,
