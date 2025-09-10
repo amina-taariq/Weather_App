@@ -13,6 +13,7 @@ import ForecastSection from './ForecastSection';
 import ForecastForNextDays from './ForecastForNextDays';
 import { fetchLocation, fetchWeatherForecast } from '../../../Api/weather';
 import { debounce } from 'lodash';
+import { getData, storeData} from '../../utils/asyncStorage'
 
 const Home: React.FC = () => {
   const [weather, setWeather] = useState<any>(null);
@@ -20,9 +21,15 @@ const Home: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchWeather('Islamabad');
-  }, []);
+useEffect(() => {
+  const fetchInitialWeather = async () => {
+    let myCity = await getData('city'); 
+    const cityName = myCity && myCity.trim() !== '' ? myCity : 'Islamabad';
+    fetchWeather(cityName);
+  };
+
+  fetchInitialWeather();
+}, []);
 
  const fetchWeather = (city: string) => {
    setLoading(true);
@@ -47,6 +54,7 @@ const Home: React.FC = () => {
     setLocations([]);
     setShowSearch(false);
     fetchWeather(loc.name);
+    storeData('city', loc.name);
   };
 
   return (
