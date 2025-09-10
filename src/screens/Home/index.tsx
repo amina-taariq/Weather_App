@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import Search from './Search';
 import ForecastSection from './ForecastSection';
@@ -17,16 +18,21 @@ const Home: React.FC = () => {
   const [weather, setWeather] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // fetch default city weather on mount
   useEffect(() => {
     fetchWeather('Islamabad');
   }, []);
 
-  const fetchWeather = (city: string) => {
-    fetchWeatherForecast({ cityName: city, days: '7' })
-      .then(data => setWeather(data))
-  };
+ const fetchWeather = (city: string) => {
+   setLoading(true);
+   fetchWeatherForecast({ cityName: city, days: '7' })
+     .then(data => {
+       setWeather(data);
+       setLoading(false); 
+     })
+ };
+
 
   const handleSearch = (value: string) => {
     if (value.length > 2) {
@@ -51,30 +57,36 @@ const Home: React.FC = () => {
         resizeMode="cover"
         blurRadius={70}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+        {loading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" />
+          </View>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            <View style={styles.innerContainer}>
-              <Search
-                showSearch={showSearch}
-                setShowSearch={setShowSearch}
-                onSearch={handleTextDebounce}
-                locations={locations}
-                onLocationSelect={handleLocationSelect}
-              />
-              {weather && (
-                <>
-                  <ForecastSection weather={weather} />
-                  <ForecastForNextDays weather={weather} />
-                </>
-              )}
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.innerContainer}>
+                <Search
+                  showSearch={showSearch}
+                  setShowSearch={setShowSearch}
+                  onSearch={handleTextDebounce}
+                  locations={locations}
+                  onLocationSelect={handleLocationSelect}
+                />
+                {weather && (
+                  <>
+                    <ForecastSection weather={weather} />
+                    <ForecastForNextDays weather={weather} />
+                  </>
+                )}
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        )}
       </ImageBackground>
     </View>
   );
@@ -91,6 +103,12 @@ const styles = StyleSheet.create({
   innerContainer: {
     width: '100%',
     height: '100%',
+  },
+  loaderContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
