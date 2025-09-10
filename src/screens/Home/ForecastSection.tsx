@@ -42,7 +42,7 @@ const ForecastSection: React.FC<ForecastSectionProps> = ({ weather }) => {
             source={require('../../assets/icons/sun.png')}
             style={styles.iconsize}
           />
-          <Text style={styles.text}>6:05 AM</Text>
+          <Text style={styles.text}>{ weather?.forecast?.forecastday[0]?.astro?.sunrise}</Text>
         </View>
       </View>
     </View>
